@@ -74,10 +74,10 @@ class FilterSetOptions:
 
 
 class FilterSetMetaclass(type):
-    def __new__(cls, name, bases, attrs):
+    def __new__(cls, name, bases, attrs, **kwargs):
         attrs["declared_filters"] = cls.get_declared_filters(bases, attrs)
 
-        new_class = super().__new__(cls, name, bases, attrs)
+        new_class = super().__new__(cls, name, bases, attrs, **kwargs)
         new_class._meta = FilterSetOptions(getattr(new_class, "Meta", None))
         new_class.base_filters = new_class.get_filters()
 

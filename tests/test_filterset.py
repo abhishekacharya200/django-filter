@@ -794,6 +794,22 @@ class FilterSetClassCreationTests(TestCase):
             "f5": CharFilter,
         }
 
+    def test_init_subclass_kwargs(self):
+        # Class keyword arguments are passed through the metaclass to
+        # __init_subclass__().
+        class Base(FilterSet):
+            def __init_subclass__(cls, abstract=False, **kwargs):
+                super().__init_subclass__(**kwargs)
+                cls.abstract = abstract
+
+        class F(Base, abstract=True):
+            class Meta:
+                model = User
+                fields = ["username"]
+
+        self.assertIs(F.abstract, True)
+        self.assertEqual(list(F.base_filters), ["username"])
+
     def test_filterset_factory(self):
         filterset = filterset_factory(Article)
         self.assertEqual(list(filterset.base_filters), ["name", "published", "author"])
