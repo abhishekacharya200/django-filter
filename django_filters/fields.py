@@ -314,6 +314,10 @@ class ModelChoiceField(ChoiceIteratorMixin, forms.ModelChoiceField):
 class ModelMultipleChoiceField(ChoiceIteratorMixin, forms.ModelMultipleChoiceField):
     iterator = ModelChoiceIterator
 
+    def clean(self, value):
+        result = super().clean(value)
+        return list(result)
+
     def _check_values(self, value):
         null = self.null_label is not None and value and self.null_value in value
         if null:  # remove the null value and any potential duplicates

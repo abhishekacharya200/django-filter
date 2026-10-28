@@ -19,10 +19,13 @@ from django_filters.fields import (
     IsoDateTimeRangeField,
     Lookup,
     LookupChoiceField,
+    ModelMultipleChoiceField,
     RangeField,
     TimeRangeField,
 )
 from django_filters.widgets import BaseCSVWidget, CSVWidget, RangeWidget
+
+from .models import User
 
 
 def to_d(float_value):
@@ -322,3 +325,17 @@ class BaseRangeFieldTests(TestCase):
 
         with self.assertRaisesMessage(forms.ValidationError, msg):
             field.clean([""])
+
+
+class ModelMultipleChoiceFieldTests(TestCase):
+    def setUp(self):
+        self.u1 = User.objects.create(username="u1")
+        self.u2 = User.objects.create(username="u2")
+
+    def test_clean_returns_list(self):
+        field = ModelMultipleChoiceField(queryset=User.objects.all(), required=False)
+        self.assertEqual(field.clean([]), [])
+        self.assertEqual(field.clean(""), [])
+        self.assertEqual(field.clean(None), [])
+        self.assertEqual(field.clean([str(self.u1.pk)]), [self.u1])
+        self.assertEqual(field.clean([str(self.u1.pk), str(self.u2.pk)]), [self.u1, self.u2])

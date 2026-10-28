@@ -5,7 +5,7 @@ from itertools import chain
 
 from django import forms
 from django.core.validators import MaxValueValidator
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.db.models.constants import LOOKUP_SEP
 from django.forms.utils import pretty_name
 from django.utils.timezone import now
@@ -160,6 +160,8 @@ class Filter:
 
     def filter(self, qs, value):
         if value in EMPTY_VALUES:
+            return qs
+        if isinstance(value, QuerySet) and not value.exists():
             return qs
         if self.distinct:
             qs = qs.distinct()
@@ -829,6 +831,8 @@ class FilterMethod:
 
     def __call__(self, qs, value):
         if value in EMPTY_VALUES:
+            return qs
+        if isinstance(value, QuerySet) and not value.exists():
             return qs
 
         return self.method(qs, self.f.field_name, value)

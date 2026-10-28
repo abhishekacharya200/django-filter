@@ -1179,6 +1179,67 @@ class FilterMethodTests(TestCase):
         )
         self.assertEqual(list(F({"username": "jose"}).qs), list())
 
+    def test_filtering_model_multiple_choice_empty(self):
+        class F(FilterSet):
+            users = ModelMultipleChoiceFilter(
+                queryset=User.objects.all(), method="filter_users"
+            )
+
+            class Meta:
+                model = User
+                fields = ["users"]
+
+            def filter_users(self, queryset, name, value):
+                raise AssertionError(
+                    f"filter_users should not be called on empty input, got: {value!r}"
+                )
+
+        self.assertEqual(list(F().qs), list(User.objects.all()))
+        self.assertEqual(list(F({}).qs), list(User.objects.all()))
+        self.assertEqual(list(F({"users": []}).qs), list(User.objects.all()))
+        self.assertEqual(list(F({"users": ""}).qs), list(User.objects.all()))
+
+    def test_filtering_model_multiple_choice_selected(self):
+        alex = User.objects.get(username="alex")
+        jacob = User.objects.get(username="jacob")
+
+        class F(FilterSet):
+            users = ModelMultipleChoiceFilter(
+                queryset=User.objects.all(), method="filter_users"
+            )
+
+            class Meta:
+                model = User
+                fields = ["users"]
+
+            def filter_users(self, queryset, name, value):
+                return queryset.filter(id__in=[u.id for u in value])
+
+        f = F({"users": [str(alex.pk)]})
+        self.assertEqual(list(f.qs), [alex])
+
+        f_both = F({"users": [str(alex.pk), str(jacob.pk)]})
+        self.assertEqual(list(f_both.qs), [alex, jacob])
+
+    def test_filtering_empty_queryset_value(self):
+        class RawMMCF(ModelMultipleChoiceFilter):
+            field_class = forms.ModelMultipleChoiceField
+
+        class F(FilterSet):
+            users = RawMMCF(queryset=User.objects.all(), method="filter_users")
+
+            class Meta:
+                model = User
+                fields = ["users"]
+
+            def filter_users(self, queryset, name, value):
+                raise AssertionError(
+                    f"filter_users should not be called on empty queryset, got: {value!r}"
+                )
+
+        self.assertEqual(list(F().qs), list(User.objects.all()))
+        self.assertEqual(list(F({}).qs), list(User.objects.all()))
+
 
 class O2ORelationshipTests(TestCase):
     def setUp(self):
